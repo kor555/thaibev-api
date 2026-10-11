@@ -1,0 +1,23 @@
+FROM golang:1.27.2-alpine AS builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /app
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+
+# Download all dependancies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN go mod download
+
+# Copy the source from the current directory to the Working Directory inside the container
+COPY . .
+
+# Expose port 8080 to the outside world
+EXPOSE 8080
+
+# Use CompileDaemon for hot reload
+RUN go get github.com/githubnemo/CompileDaemon
+RUN go install github.com/githubnemo/CompileDaemon
+
+# Command to run the executable
+ENTRYPOINT ["CompileDaemon", "--directory=/app", "--polling", "--polling-interval=1000", "--build=go build -o /tmp/main ./cmd/main.go", "--command=/tmp/main"]
